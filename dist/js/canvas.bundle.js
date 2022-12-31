@@ -112,11 +112,22 @@ var mouse = {
   x: innerWidth / 2,
   y: innerHeight / 2
 };
-var colors = ['#2185C5', '#7ECEFD', '#FFF6E5', '#FF7F66']; // Event Listeners
-
-addEventListener('mousemove', function (event) {
+var colors = ['#2185C5', '#7ECEFD', '#FFF6E5', '#FF7F66'];
+var gravity = 0.01;
+var friction = 0.99;
+addEventListener('click', function (event) {
   mouse.x = event.clientX;
   mouse.y = event.clientY;
+  var particleCount = 400;
+  var angle = Math.PI * 2 / particleCount;
+  var power = 7;
+
+  for (var i = 0; i < particleCount; i++) {
+    particles.push(new Particle(mouse.x, mouse.y, 3, "hsl(".concat(Math.random() * 360, ", 50%, 50%)"), {
+      x: Math.cos(angle * i) * Math.random() * power,
+      y: Math.sin(angle * i) * Math.random() * power
+    }));
+  }
 });
 addEventListener('resize', function () {
   canvas.width = innerWidth;
@@ -124,52 +135,65 @@ addEventListener('resize', function () {
   init();
 }); // Objects
 
-var _Object = /*#__PURE__*/function () {
-  function Object(x, y, radius, color) {
-    _classCallCheck(this, Object);
+var Particle = /*#__PURE__*/function () {
+  function Particle(x, y, radius, color, velocity) {
+    _classCallCheck(this, Particle);
 
     this.x = x;
     this.y = y;
     this.radius = radius;
     this.color = color;
+    this.velocity = velocity;
+    this.alpha = 1;
   }
 
-  _createClass(Object, [{
+  _createClass(Particle, [{
     key: "draw",
     value: function draw() {
+      c.save();
+      c.globalAlpha = this.alpha;
       c.beginPath();
       c.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
       c.fillStyle = this.color;
       c.fill();
       c.closePath();
+      c.restore();
     }
   }, {
     key: "update",
     value: function update() {
       this.draw();
+      this.velocity.x *= friction;
+      this.velocity.y *= friction;
+      this.velocity.y += gravity;
+      this.x += this.velocity.x;
+      this.y += this.velocity.y;
+      this.alpha -= 0.005;
     }
   }]);
 
-  return Object;
+  return Particle;
 }(); // Implementation
 
 
-var objects;
+var particles;
 
 function init() {
-  objects = [];
-
-  for (var i = 0; i < 400; i++) {// objects.push()
-  }
+  particles = [];
 } // Animation Loop
 
 
 function animate() {
   requestAnimationFrame(animate);
-  c.clearRect(0, 0, canvas.width, canvas.height);
-  c.fillText('HTML CANVAS BOILERPLATE', mouse.x, mouse.y); // objects.forEach(object => {
-  //  object.update()
-  // })
+  c.fillStyle = 'rgba(0, 0, 0, 0.05)';
+  c.fillRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(function (particle, index) {
+    if (particle.alpha > 0) {
+      particle.update();
+    } else {
+      particles.splice(index, 1);
+    }
+  });
 }
 
 init();
